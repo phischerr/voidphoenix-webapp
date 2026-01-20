@@ -15,8 +15,8 @@ export default function QuestPage() {
   }, []);
 
   const quest = useMemo(() => ([
-    { title: "Spark: First Ignition", text: "Find a station. Walk close to Ember Exchange and hold your ground." },
-    { title: "Trade Signal", text: "Approach Ash Dock. Imagine a trade route. (UI next.)" },
+    { title: "Spark: First Ignition", text: "Go to /explore and approach Ember Exchange (the station circle). (Next: auto-complete)" },
+    { title: "Trade Signal", text: "Approach Ash Dock. (Next: inventory + trade UI)" },
     { title: "Route Memory", text: "Reach Signal Foundry. Your path becomes a blueprint." },
   ]), []);
 
