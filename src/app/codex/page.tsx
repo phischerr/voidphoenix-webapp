@@ -6,10 +6,13 @@ function readText(rel: string) {
   const p = path.join(process.cwd(), "gameData", rel);
   return fs.readFileSync(p, "utf8");
 }
-
+function vpSanitizeJson(raw: string) {
+  // Strips U+FEFF (BOM) if it appears as a character inside a string
+  return String(raw || "").replace(/^\uFEFF/, "");
+}
 export default function Codex() {
   const lore = readText("lore.md");
-  const story = JSON.parse(readText("story.json"));
+  const story = JSON.parse(vpSanitizeJson(readText("story.json")));
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-100">
@@ -47,3 +50,4 @@ export default function Codex() {
     </main>
   );
 }
+

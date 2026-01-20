@@ -1,0 +1,60 @@
+﻿"use client";
+import React from "react";
+import EmberFX from "./EmberFX";
+
+function PixelLogo() {
+  return (
+    <svg width="44" height="44" viewBox="0 0 44 44" role="img" aria-label="VoidPhoenix">
+      <defs>
+        <linearGradient id="g" x1="0" x2="1">
+          <stop offset="0" stopColor="rgba(46,242,255,1)" />
+          <stop offset="0.55" stopColor="rgba(168,85,255,1)" />
+          <stop offset="1" stopColor="rgba(255,77,109,1)" />
+        </linearGradient>
+      </defs>
+      <rect x="2" y="2" width="40" height="40" rx="10" fill="rgba(0,0,0,.25)" stroke="rgba(255,255,255,.18)" />
+      <path d="M22 10 L28 16 L22 34 L16 16 Z" fill="url(#g)" opacity="0.9" />
+      <path d="M22 14 L25 17 L22 30 L19 17 Z" fill="rgba(255,255,255,.75)" opacity="0.15" />
+    </svg>
+  );
+}
+
+const NavLink = ({ href, label }: { href: string; label: string }) => (
+  <a className="vp-btn" href={href} style={{ padding: "10px 12px", borderRadius: 12, fontSize: 13 }}>
+    {label}
+  </a>
+);
+
+export default function GameShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ position: "relative", minHeight: "100vh" }}>
+      <div className="vp-grid" style={{ position: "fixed", inset: 0, zIndex: 1 }} />
+      <EmberFX enabled={true} />
+      <div style={{ position: "relative", zIndex: 5, maxWidth: 1100, margin: "0 auto", padding: "26px 16px 60px" }}>
+        <header className="vp-panel" style={{ padding: 16, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <PixelLogo />
+            <div>
+              <div style={{ fontSize: 18, letterSpacing: 0.6, fontWeight: 800 }}>VoidPhoenix</div>
+              <div style={{ fontSize: 12, color: "var(--muted)" }}>retro build • sparks • CRT • pixel UI</div>
+            </div>
+          </div>
+
+          <nav style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "flex-end" }}>
+            <NavLink href="/" label="Home" />
+            <NavLink href="/game" label="Game" />
+            <NavLink href="/market" label="Market" />
+            <NavLink href="/codex" label="Codex" />
+            <NavLink href="/settings" label="Settings" />
+          </nav>
+        </header>
+
+        <main style={{ marginTop: 18 }}>{children}</main>
+
+        <footer style={{ marginTop: 22, textAlign: "center", color: "rgba(255,255,255,.55)", fontSize: 12 }}>
+          Built for low-maintenance play • fairness-first economy scaffolds • assets coming online
+        </footer>
+      </div>
+    </div>
+  );
+}

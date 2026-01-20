@@ -1,0 +1,22 @@
+﻿[
+    {
+        "href":  "/assets/generated/vp_pixel_hero.png",
+        "name":  "vp_pixel_hero",
+        "file":  "C:\\Users\\talon\\VoidPhoenix_AIOC\\voidphoenix-webapp\\public\\assets\\generated\\vp_pixel_hero.png"
+    },
+    {
+        "href":  "/assets/generated/vp_pixel_mage.png",
+        "name":  "vp_pixel_mage",
+        "file":  "C:\\Users\\talon\\VoidPhoenix_AIOC\\voidphoenix-webapp\\public\\assets\\generated\\vp_pixel_mage.png"
+    },
+    {
+        "href":  "/assets/generated/vp_pixel_rogue.png",
+        "name":  "vp_pixel_rogue",
+        "file":  "C:\\Users\\talon\\VoidPhoenix_AIOC\\voidphoenix-webapp\\public\\assets\\generated\\vp_pixel_rogue.png"
+    },
+    {
+        "href":  "/assets/generated/vp_pixel_bot.png",
+        "name":  "vp_pixel_bot",
+        "file":  "C:\\Users\\talon\\VoidPhoenix_AIOC\\voidphoenix-webapp\\public\\assets\\generated\\vp_pixel_bot.png"
+    }
+]

@@ -1,0 +1,161 @@
+{
+  "id": "prologue_embers_in_glass",
+  "version": "0.2.0",
+  "title": "Prologue — Embers in the Glass",
+  "vars_init": {
+    "motive.power": 0,
+    "motive.protect": 0,
+    "motive.truth": 0,
+    "motive.redemption": 0,
+    "motive.curiosity": 0,
+    "motive.escape": 0,
+    "motive.amnesia": 0,
+    "sable.trust": 0,
+    "sable.respect": 0,
+    "sable.fear": 0,
+    "ember.affinity": 0,
+    "phoenix.notice": 0,
+    "tags.trickster": false,
+    "flags.sable_suspects": false,
+    "flags.oath_debt": false
+  },
+  "start": "n_intro",
+  "nodes": {
+    "n_intro": {
+      "type": "narration",
+      "text": [
+        "You wake to a hush that feels engineered. Not silence—containment.",
+        "Embers drift in slow spirals, suspended like tiny planets.",
+        "A gate rises ahead: black metal with hairline veins of orange light.",
+        "Carved into the arch: ASHLINE — ENTER ONLY WHAT YOU CAN AFFORD TO LOSE."
+      ],
+      "next": "n_sable_name"
+    },
+    "n_sable_name": {
+      "type": "dialogue",
+      "speaker": "Warden Sable",
+      "text": "You’re late. Or early. Time doesn’t behave near the Emberline. State your name for the ledger.",
+      "choices": [
+        { "id":"c_name_real","text":"“My name is… (say your name).”","effects":[{"var":"sable.trust","op":"+=","value":1}],"next":"n_why_come" },
+        { "id":"c_name_weapon","text":"“Names are weapons. I keep mine sheathed.”","effects":[{"var":"sable.respect","op":"+=","value":1},{"var":"sable.trust","op":"+=","value":-1}],"next":"n_why_come" },
+        { "id":"c_name_ashwalker","text":"“Write ‘Ashwalker.’ That’s enough.”","effects":[{"var":"ember.affinity","op":"+=","value":1}],"next":"n_why_come" },
+        { "id":"c_name_unknown","text":"“I don’t know.”","effects":[{"var":"motive.amnesia","op":"+=","value":1},{"var":"sable.trust","op":"+=","value":-1},{"var":"phoenix.notice","op":"+=","value":1}],"next":"n_why_come" },
+        { "id":"c_name_you_know","text":"“You already know my name.”","effects":[{"var":"sable.fear","op":"+=","value":1},{"var":"phoenix.notice","op":"+=","value":2}],"next":"n_why_come" },
+        { "id":"c_name_work","text":"“Does it matter? I’m here to work.”","effects":[{"var":"sable.trust","op":"+=","value":1},{"var":"motive.escape","op":"+=","value":1}],"next":"n_why_come" }
+      ]
+    },
+    "n_why_come": {
+      "type": "dialogue",
+      "speaker": "Warden Sable",
+      "text": "Answer the real question. Why did you come?",
+      "choices": [
+        { "id":"c_motive_power","text":"“Power.”","effects":[{"var":"motive.power","op":"+=","value":1},{"var":"sable.respect","op":"+=","value":1}],"next":"n_follow_power" },
+        { "id":"c_motive_protect","text":"“To protect someone.”","effects":[{"var":"motive.protect","op":"+=","value":1},{"var":"sable.trust","op":"+=","value":1}],"next":"n_follow_protect" },
+        { "id":"c_motive_truth","text":"“Truth.”","effects":[{"var":"motive.truth","op":"+=","value":1},{"var":"sable.respect","op":"+=","value":1},{"var":"phoenix.notice","op":"+=","value":1}],"next":"n_follow_truth" },
+        { "id":"c_motive_redemption","text":"“Redemption.”","effects":[{"var":"motive.redemption","op":"+=","value":1},{"var":"sable.trust","op":"+=","value":1}],"next":"n_ember_test" },
+        { "id":"c_motive_curiosity","text":"“Curiosity.”","effects":[{"var":"motive.curiosity","op":"+=","value":1},{"var":"phoenix.notice","op":"+=","value":1}],"next":"n_ember_test" },
+        { "id":"c_motive_escape","text":"“Escape.”","effects":[{"var":"motive.escape","op":"+=","value":1},{"var":"sable.trust","op":"+=","value":-1}],"next":"n_ember_test" },
+        { "id":"c_motive_amnesia","text":"“I don’t remember.”","effects":[{"var":"motive.amnesia","op":"+=","value":1},{"var":"phoenix.notice","op":"+=","value":2}],"next":"n_ember_test" },
+        { "id":"c_motive_sent","text":"“I was sent.”","effects":[{"var":"sable.trust","op":"+=","value":-1}],"next":"n_follow_sent" },
+        { "id":"c_motive_none","text":"“None of your business.”","effects":[{"var":"sable.trust","op":"+=","value":-2},{"var":"sable.fear","op":"+=","value":1}],"next":"n_ember_test" }
+      ]
+    },
+    "n_follow_power": {
+      "type":"dialogue","speaker":"Warden Sable",
+      "text":"Honest. Dangerous. Pick your poison—how do you intend to hold it?",
+      "choices":[
+        { "id":"c_power_now","text":"“Open the gate. I’m done talking.”","effects":[{"var":"sable.trust","op":"+=","value":-1},{"var":"sable.respect","op":"+=","value":1}],"hooks":[{"type":"unlock_track","value":"high_risk_rewards"}],"next":"n_ember_test" },
+        { "id":"c_power_protect","text":"“Power to protect. Not to rule.”","effects":[{"var":"motive.protect","op":"+=","value":1},{"var":"sable.trust","op":"+=","value":1}],"next":"n_ember_test" },
+        { "id":"c_power_tool","text":"“Power is a tool. I’ll prove I can hold it.”","effects":[{"var":"sable.respect","op":"+=","value":1}],"hooks":[{"type":"quest_unlock","value":"trial_hold_the_ember"}],"next":"n_ember_test" },
+        { "id":"c_power_cost","text":"“What does it cost?”","effects":[{"var":"motive.truth","op":"+=","value":1},{"var":"phoenix.notice","op":"+=","value":1}],"next":"n_ember_test" }
+      ]
+    },
+    "n_follow_protect": {
+      "type":"dialogue","speaker":"Warden Sable",
+      "text":"Who are you protecting?",
+      "choices":[
+        { "id":"c_protect_sister","text":"“My sister.”","effects":[{"var":"sable.trust","op":"+=","value":2}],"hooks":[{"type":"quest_unlock","value":"side_missing_ashline"}],"next":"n_ember_test" },
+        { "id":"c_protect_innocent","text":"“Someone who doesn’t deserve what’s coming.”","effects":[{"var":"motive.redemption","op":"+=","value":1},{"var":"sable.trust","op":"+=","value":1}],"next":"n_ember_test" },
+        { "id":"c_protect_unsaid","text":"“It’s not safe to say.”","effects":[{"var":"sable.respect","op":"+=","value":1}],"next":"n_ember_test" },
+        { "id":"c_protect_me","text":"“It’s me.”","effects":[{"var":"motive.redemption","op":"+=","value":1},{"var":"phoenix.notice","op":"+=","value":1}],"next":"n_ember_test" }
+      ]
+    },
+    "n_follow_truth": {
+      "type":"dialogue","speaker":"Warden Sable",
+      "text":"Truth is never free. What are you really asking for?",
+      "choices":[
+        { "id":"c_truth_history","text":"“What happened here?”","effects":[{"var":"sable.trust","op":"+=","value":1}],"hooks":[{"type":"codex_unlock","value":"emberline_incident_partial"}],"next":"n_ember_test" },
+        { "id":"c_truth_control","text":"“Who controls the drift?”","effects":[{"var":"phoenix.notice","op":"+=","value":1}],"next":"n_ember_test" },
+        { "id":"c_truth_phoenix","text":"“What do you know about the Phoenix?”","effects":[{"var":"phoenix.notice","op":"+=","value":2}],"hooks":[{"type":"phoenix_encounter_bias","value":"earlier"}],"next":"n_ember_test" },
+        { "id":"c_truth_evidence","text":"“I’m here for evidence.”","effects":[{"var":"sable.respect","op":"+=","value":2}],"hooks":[{"type":"unlock_area","value":"archives_early"}],"next":"n_ember_test" }
+      ]
+    },
+    "n_follow_sent": {
+      "type":"dialogue","speaker":"Warden Sable",
+      "text":"By who?",
+      "choices":[
+        { "id":"c_sent_truth","text":"Tell the truth.","effects":[{"var":"sable.trust","op":"+=","value":1}],"next":"n_ember_test" },
+        { "id":"c_sent_lie","text":"Lie.","effects":[{"var":"sable.trust","op":"+=","value":-2},{"var":"flags.sable_suspects","op":"=","value":true}],"next":"n_ember_test" },
+        { "id":"c_sent_refuse","text":"Refuse to answer.","effects":[{"var":"sable.trust","op":"+=","value":-1},{"var":"phoenix.notice","op":"+=","value":1}],"next":"n_ember_test" }
+      ]
+    },
+    "n_ember_test": {
+      "type":"dialogue","speaker":"Warden Sable",
+      "text":"Step forward. The embers will test you.",
+      "choices":[
+        { "id":"c_test_ground","text":"Hold your ground.","effects":[{"var":"sable.respect","op":"+=","value":1}],"hooks":[{"type":"stat_gain","value":"resolve:1"}],"next":"n_phoenix_arrival" },
+        { "id":"c_test_reach","text":"Reach for the embers.","effects":[{"var":"ember.affinity","op":"+=","value":1},{"var":"phoenix.notice","op":"+=","value":1}],"hooks":[{"type":"stat_gain","value":"embercraft:1"}],"next":"n_phoenix_arrival" },
+        { "id":"c_test_listen","text":"Close your eyes and listen.","effects":[{"var":"phoenix.notice","op":"+=","value":2}],"hooks":[{"type":"stat_gain","value":"insight:1"}],"next":"n_phoenix_arrival" },
+        { "id":"c_test_speak","text":"Speak to the embers.","effects":[{"var":"phoenix.notice","op":"+=","value":3},{"var":"sable.fear","op":"+=","value":1}],"next":"n_phoenix_arrival" },
+        { "id":"c_test_humor","text":"Crack a joke to defuse the fear.","effects":[{"var":"phoenix.notice","op":"+=","value":1}],"hooks":[{"type":"roll","value":"coinflip_sable_trust"}],"next":"n_phoenix_arrival" },
+        { "id":"c_test_cheat","text":"Try to cheat (throw a stone through first).","effects":[{"var":"sable.respect","op":"+=","value":-1},{"var":"phoenix.notice","op":"+=","value":1},{"var":"tags.trickster","op":"=","value":true}],"next":"n_phoenix_arrival" }
+      ]
+    },
+    "n_phoenix_arrival": {
+      "type":"dialogue","speaker":"The Phoenix",
+      "text":"Choice makes you real.",
+      "choices":[
+        { "id":"c_phoenix_kneel","text":"Kneel.","effects":[{"var":"phoenix.notice","op":"+=","value":1}],"hooks":[{"type":"reward_bias","value":"protect_resolve"}],"next":"n_quest_unlock" },
+        { "id":"c_phoenix_stand","text":"Stand tall.","effects":[{"var":"phoenix.notice","op":"+=","value":1}],"hooks":[{"type":"reward_bias","value":"power_embercraft"}],"next":"n_quest_unlock" },
+        { "id":"c_phoenix_question","text":"Ask: “Why me?”","effects":[{"var":"phoenix.notice","op":"+=","value":2}],"hooks":[{"type":"stat_gain","value":"insight:1"}],"next":"n_quest_unlock" },
+        { "id":"c_phoenix_refuse","text":"Refuse it.","effects":[{"var":"phoenix.notice","op":"+=","value":1},{"var":"sable.respect","op":"+=","value":1}],"hooks":[{"type":"reward","value":"phoenix_feather_token_sealed"}],"next":"n_quest_unlock" },
+        { "id":"c_phoenix_offer","text":"Offer a promise (an oath).","effects":[{"var":"phoenix.notice","op":"+=","value":3},{"var":"flags.oath_debt","op":"=","value":true}],"hooks":[{"type":"unlock_track","value":"oath_debt_rewards"}],"next":"n_quest_unlock" },
+        { "id":"c_phoenix_silent","text":"Stay silent.","effects":[{"var":"phoenix.notice","op":"+=","value":2}],"next":"n_quest_unlock" }
+      ]
+    },
+    "n_quest_unlock": {
+      "type":"narration",
+      "text":[
+        "A sealed ember-sigil drops into your palm.",
+        "Quest Unlocked: First Flame, First Oath",
+        "Objective: Speak to Sable again, then craft a Cinder Band."
+      ],
+      "hooks":[
+        { "type":"quest_unlock","value":"first_flame_first_oath" },
+        { "type":"reward","value":"phoenix_feather_token" },
+        { "type":"codex_unlock","value":"phoenix_entry" }
+      ],
+      "next":"n_oath_choice"
+    },
+    "n_oath_choice": {
+      "type":"dialogue","speaker":"The Phoenix",
+      "text":"Choose what you become.",
+      "choices":[
+        { "id":"c_oath_embers","text":"Oath of Embers (Embercraft)","hooks":[{"type":"oath_set","value":"embers"}],"next":"n_end" },
+        { "id":"c_oath_stone","text":"Oath of Stone (Resolve/Defense)","hooks":[{"type":"oath_set","value":"stone"}],"next":"n_end" },
+        { "id":"c_oath_whispers","text":"Oath of Whispers (Trade/Social)","hooks":[{"type":"oath_set","value":"whispers"}],"next":"n_end" },
+        { "id":"c_oath_wings","text":"Oath of Wings (Mobility/Explore)","hooks":[{"type":"oath_set","value":"wings"}],"next":"n_end" }
+      ]
+    },
+    "n_end": {
+      "type":"narration",
+      "text":[
+        "The embers part.",
+        "Sable steps aside.",
+        "The Ashline Gate opens."
+      ],
+      "hooks":[{ "type":"ui_unlock_tabs_preview","value":["market","guilds","shop","kingdom"] }],
+      "end": true
+    }
+  }
+}
