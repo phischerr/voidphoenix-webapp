@@ -1,4 +1,4 @@
-﻿export type Currency = "ASH" | "EMBER" | "AW";
+export type Currency = "ASH" | "EMBER" | "AW";
 
 export type ItemId = string;
 

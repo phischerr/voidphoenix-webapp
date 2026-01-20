@@ -1,4 +1,4 @@
-﻿# VoidPhoenix Lore (MVP)
+# VoidPhoenix Lore (MVP)
 
 In the Void, stars collapse into memory.  
 Somewhere between ash and signal, a Phoenix learns to reboot reality.

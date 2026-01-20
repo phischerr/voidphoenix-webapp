@@ -1,4 +1,4 @@
-﻿import type { MarketItem, Listing } from "./marketTypes";
+import type { MarketItem, Listing } from "./marketTypes";
 
 export const items: MarketItem[] = [
   { id: "ash-ore", name: "Ash Ore", tier: 1, rarity: "common" },

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import React, { useEffect, useMemo, useRef } from "react";
 
 type Props = { enabled?: boolean };

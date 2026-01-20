@@ -1,4 +1,4 @@
-﻿export type UpgradeKey = "spark" | "feather" | "ember" | "flare";
+export type UpgradeKey = "spark" | "feather" | "ember" | "flare";
 
 export type UpgradeDef = {
   key: UpgradeKey;

@@ -1,4 +1,4 @@
-﻿import { GameState, UPGRADE_DEFS, UpgradeKey } from "./gameTypes";
+import { GameState, UPGRADE_DEFS, UpgradeKey } from "./gameTypes";
 
 export function format(n: number): string {
   if (!Number.isFinite(n)) return "∞";

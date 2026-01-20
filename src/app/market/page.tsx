@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import GameShell from "@/components/GameShell";
 import { items, listings } from "@/lib/marketMock";
 

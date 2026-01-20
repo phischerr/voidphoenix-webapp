@@ -1,4 +1,4 @@
-﻿import { GameState, defaultState, GAME_VERSION } from "./gameTypes";
+import { GameState, defaultState, GAME_VERSION } from "./gameTypes";
 const KEY = "voidphoenix_save_v1";
 
 export function loadState(): GameState {

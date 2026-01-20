@@ -68,9 +68,9 @@ export default function TopDownMap() {
   const worldW = 72;
   const worldH = 40;
 
-  const tile = 16;
-  const viewTilesW = 48;
-  const viewTilesH = 30;
+  const tile = 32;
+  const viewTilesW = 26; // 26*32 = 832px
+  const viewTilesH = 16; // 16*32 = 512px
 
   const [player, setPlayer] = useState<Entity>({
     id: "p1",
@@ -206,13 +206,13 @@ export default function TopDownMap() {
         const sy = (e.y - camera.y) * tile;
 
         ctx.fillStyle = "rgba(0,0,0,0.35)";
-        ctx.fillRect(sx + 3, sy + 12, 10, 3);
+        ctx.fillRect(sx + 6, sy + 24, 20, 5);
 
         const p = spritePath(e.sprite);
         const img = spriteImgs.current[p];
 
         if (spritesReady && img && img.complete) {
-          ctx.drawImage(img, sx, sy - 8, tile, tile);
+          ctx.save(); ctx.globalAlpha = 0.50; ctx.drawImage(img, sx-1, (sy-18), tile, tile); ctx.drawImage(img, sx+1, (sy-18), tile, tile); ctx.drawImage(img, sx, (sy-18)-1, tile, tile); ctx.drawImage(img, sx, (sy-18)+1, tile, tile); ctx.restore(); ctx.drawImage(img, sx, sy - 18, tile, tile);
         } else {
           ctx.fillStyle = "rgba(200,200,200,0.6)";
           ctx.fillRect(sx + 4, sy + 4, 8, 8);
@@ -235,7 +235,7 @@ export default function TopDownMap() {
       <div className="text-sm text-zinc-300 mb-2">
         <div className="font-semibold">Explore</div>
         <div>Top-down overworld (pixel-perfect). Interact with creatures and NPCs.</div>
-        <div className="opacity-80">WASD / Arrows to move • E to interact</div>
+        <div className="opacity-80">WASD / Arrows to move â€¢ E to interact</div>
       </div>
 
       <div className="inline-block border border-zinc-800 bg-black/30">
@@ -243,7 +243,7 @@ export default function TopDownMap() {
       </div>
 
       <div className="mt-2 text-xs text-zinc-400">
-        Biomes: Ash Dunes • Burnt Forest • Scorched Wilds • Icy Peaks
+        Biomes: Ash Dunes â€¢ Burnt Forest â€¢ Scorched Wilds â€¢ Icy Peaks
       </div>
     </div>
   );
