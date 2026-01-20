@@ -18,13 +18,11 @@ function clamp(n: number, a: number, b: number) {
 }
 
 function seeded(n: number) {
-  // deterministic-ish 0..1
   const x = Math.sin(n * 999.123) * 10000;
   return x - Math.floor(x);
 }
 
 function biomeAt(x: number, y: number): Biome {
-  // Simple biome map: left -> ash, mid -> forest, right -> scorched, top-right -> icy
   if (x > 52 && y < 18) return "icy_peaks";
   if (x < 24) return "ash_dunes";
   if (x < 46) return "burnt_forest";
@@ -32,10 +30,12 @@ function biomeAt(x: number, y: number): Biome {
 }
 
 function tileColor(b: Biome, x: number, y: number) {
-  // dark souls vibe: muted, ashy
-  const noise = (seeded(x * 31 + y * 17) - 0.5) * 14; // subtle variance
-  const c = (r: number, g: number, b: number) =>
-    gb(,,);
+  const noise = (seeded(x * 31 + y * 17) - 0.5) * 14;
+  const rr = (r: number) => clamp(Math.round(r + noise), 0, 255);
+
+  // IMPORTANT: no template strings (PowerShell won't corrupt this)
+  const c = (r: number, g: number, bb: number) =>
+    "rgb(" + rr(r) + "," + rr(g) + "," + rr(bb) + ")";
 
   switch (b) {
     case "ash_dunes":
@@ -65,14 +65,12 @@ function spritePath(s: Entity["sprite"]) {
 export default function TopDownMap() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // World grid (bigger than viewport)
   const worldW = 72;
   const worldH = 40;
 
-  // Pixel-perfect tile size
   const tile = 16;
-  const viewTilesW = 48; // 48*16 = 768px
-  const viewTilesH = 30; // 30*16 = 480px
+  const viewTilesW = 48;
+  const viewTilesH = 30;
 
   const [player, setPlayer] = useState<Entity>({
     id: "p1",
@@ -84,8 +82,6 @@ export default function TopDownMap() {
   });
 
   const entities = useMemo<Entity[]>(() => {
-    const out: Entity[] = [];
-    // a few NPCs + mobs sprinkled across biomes
     const presets: Array<Pick<Entity, "x" | "y" | "kind" | "sprite" | "name">> = [
       { x: 14, y: 10, kind: "npc", sprite: "mage", name: "Cinder Seer" },
       { x: 28, y: 14, kind: "npc", sprite: "rogue", name: "Dune Stalker" },
@@ -94,28 +90,22 @@ export default function TopDownMap() {
       { x: 60, y: 10, kind: "mob", sprite: "bot", name: "Frostbound Wisp" },
       { x: 44, y: 28, kind: "mob", sprite: "bot", name: "Burnt Revenant" },
     ];
-    presets.forEach((p, i) =>
-      out.push({ id: e, ...p })
-    );
-    return out;
+    return presets.map((p, i) => ({ id: "e" + i, ...p }));
   }, []);
 
   const allEntities = useMemo(() => [player, ...entities], [player, entities]);
 
   const [camera, setCamera] = useState({ x: 0, y: 0 });
 
-  // Load sprites once
   const [spritesReady, setSpritesReady] = useState(false);
   const spriteImgs = useRef<Record<string, HTMLImageElement>>({});
 
   useEffect(() => {
     let cancelled = false;
 
-    const paths = Array.from(
-      new Set(allEntities.map((e) => spritePath(e.sprite)))
-    );
-
+    const paths = Array.from(new Set(allEntities.map((e) => spritePath(e.sprite))));
     let loaded = 0;
+
     paths.forEach((p) => {
       const img = new Image();
       img.src = p;
@@ -132,19 +122,16 @@ export default function TopDownMap() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Camera follows player
   useEffect(() => {
     const camX = clamp(player.x - Math.floor(viewTilesW / 2), 0, worldW - viewTilesW);
     const camY = clamp(player.y - Math.floor(viewTilesH / 2), 0, worldH - viewTilesH);
     setCamera({ x: camX, y: camY });
   }, [player.x, player.y]);
 
-  // Controls
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
-      let dx = 0,
-        dy = 0;
+      let dx = 0, dy = 0;
       if (k === "arrowup" || k === "w") dy = -1;
       if (k === "arrowdown" || k === "s") dy = 1;
       if (k === "arrowleft" || k === "a") dx = -1;
@@ -158,10 +145,12 @@ export default function TopDownMap() {
           y: clamp(p.y + dy, 0, worldH - 1),
         }));
       }
+
       if (k === "e") {
-        // very small interaction check
-        const near = entities.find((en) => Math.abs(en.x - player.x) + Math.abs(en.y - player.y) <= 1);
-        if (near) alert(${near.name ?? "Something"} stares back through the ash...);
+        const near = entities.find(
+          (en) => Math.abs(en.x - player.x) + Math.abs(en.y - player.y) <= 1
+        );
+        if (near) alert((near.name || "Something") + " stares back through the ash...");
       }
     };
 
@@ -169,7 +158,6 @@ export default function TopDownMap() {
     return () => window.removeEventListener("keydown", onKey as any);
   }, [entities, player.x, player.y]);
 
-  // Render loop
   useEffect(() => {
     const c = canvasRef.current;
     if (!c) return;
@@ -178,20 +166,18 @@ export default function TopDownMap() {
 
     c.width = viewTilesW * tile;
     c.height = viewTilesH * tile;
-
     ctx.imageSmoothingEnabled = false;
 
     const draw = () => {
-      // tiles
       for (let y = 0; y < viewTilesH; y++) {
         for (let x = 0; x < viewTilesW; x++) {
           const wx = camera.x + x;
           const wy = camera.y + y;
           const b = biomeAt(wx, wy);
+
           ctx.fillStyle = tileColor(b, wx, wy);
           ctx.fillRect(x * tile, y * tile, tile, tile);
 
-          // tiny embers/snow specks
           const n = seeded(wx * 77 + wy * 91);
           if (b !== "icy_peaks" && n > 0.985) {
             ctx.fillStyle = "rgba(255,120,60,0.18)";
@@ -204,9 +190,14 @@ export default function TopDownMap() {
         }
       }
 
-      // entities (sorted by y for fake depth)
       const entsInView = allEntities
-        .filter((e) => e.x >= camera.x && e.x < camera.x + viewTilesW && e.y >= camera.y && e.y < camera.y + viewTilesH)
+        .filter(
+          (e) =>
+            e.x >= camera.x &&
+            e.x < camera.x + viewTilesW &&
+            e.y >= camera.y &&
+            e.y < camera.y + viewTilesH
+        )
         .slice()
         .sort((a, b) => a.y - b.y);
 
@@ -214,23 +205,19 @@ export default function TopDownMap() {
         const sx = (e.x - camera.x) * tile;
         const sy = (e.y - camera.y) * tile;
 
-        // soft ground shadow
         ctx.fillStyle = "rgba(0,0,0,0.35)";
         ctx.fillRect(sx + 3, sy + 12, 10, 3);
 
         const p = spritePath(e.sprite);
         const img = spriteImgs.current[p];
 
-        if (spritesReady && img?.complete) {
-          // center sprite slightly above tile for “feet”
+        if (spritesReady && img && img.complete) {
           ctx.drawImage(img, sx, sy - 8, tile, tile);
         } else {
-          // fallback block
           ctx.fillStyle = "rgba(200,200,200,0.6)";
           ctx.fillRect(sx + 4, sy + 4, 8, 8);
         }
 
-        // player marker
         if (e.kind === "player") {
           ctx.strokeStyle = "rgba(255,180,90,0.85)";
           ctx.strokeRect(sx + 1, sy + 1, tile - 2, tile - 2);
