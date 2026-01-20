@@ -1,0 +1,21 @@
+﻿{
+  "chapters": [
+    {
+      "id": "c1",
+      "title": "Spark",
+      "beats": [
+        "A single spark appears in the dark.",
+        "The system notices you noticing it.",
+        "Something ancient begins to compile."
+      ]
+    },
+    {
+      "id": "c2",
+      "title": "Feather",
+      "beats": [
+        "A feather drifts through corrupted light.",
+        "It remembers a life you haven't lived yet."
+      ]
+    }
+  ]
+}

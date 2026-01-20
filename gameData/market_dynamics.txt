@@ -1,0 +1,3 @@
+MARKET DYNAMICS
+- Sparks (play), Ash (rebirth), Tokens (crafted)
+- Stations: buy/sell/recipes; prices drift from seeded scarcity
