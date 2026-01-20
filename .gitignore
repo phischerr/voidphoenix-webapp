@@ -43,3 +43,5 @@ dist/
 build/
 src-tauri/target/
 src-tauri/target/**
+.vercel
+.env*.local

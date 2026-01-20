@@ -1,307 +1,262 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
-type Tile = 0 | 1; // 0 grass, 1 wall
-type Vec2 = { x: number; y: number };
+type Biome = "ash_dunes" | "scorched_wilds" | "burnt_forest" | "icy_peaks";
 
-type Mob = {
+type Entity = {
   id: string;
-  pos: Vec2; // in tile coords
-  color: string;
-  name: string;
-  kind: "critter" | "npc";
+  x: number;
+  y: number;
+  kind: "player" | "npc" | "mob";
+  sprite: "hero" | "mage" | "rogue" | "bot";
+  name?: string;
 };
-
-const TILE = 16;            // logical pixel tile size
-const SCALE = 3;            // screen scale (pixel look)
-const VIEW_W = 26;          // visible tiles wide
-const VIEW_H = 16;          // visible tiles high
-const WORLD_W = 120;
-const WORLD_H = 120;
 
 function clamp(n: number, a: number, b: number) {
   return Math.max(a, Math.min(b, n));
 }
 
-function keyId(x: number, y: number) {
-  return `${x},${y}`;
+function seeded(n: number) {
+  // deterministic-ish 0..1
+  const x = Math.sin(n * 999.123) * 10000;
+  return x - Math.floor(x);
 }
 
-// Simple deterministic-ish world gen (fast, no deps)
-function genWorld(): Tile[][] {
-  const grid: Tile[][] = Array.from({ length: WORLD_H }, (_, y) =>
-    Array.from({ length: WORLD_W }, (_, x) => {
-      // border walls
-      if (x === 0 || y === 0 || x === WORLD_W - 1 || y === WORLD_H - 1) return 1;
+function biomeAt(x: number, y: number): Biome {
+  // Simple biome map: left -> ash, mid -> forest, right -> scorched, top-right -> icy
+  if (x > 52 && y < 18) return "icy_peaks";
+  if (x < 24) return "ash_dunes";
+  if (x < 46) return "burnt_forest";
+  return "scorched_wilds";
+}
 
-      // pseudo noise
-      const v =
-        (Math.sin(x * 0.17) +
-          Math.cos(y * 0.13) +
-          Math.sin((x + y) * 0.07) +
-          Math.cos((x - y) * 0.09)) /
-        4;
+function tileColor(b: Biome, x: number, y: number) {
+  // dark souls vibe: muted, ashy
+  const noise = (seeded(x * 31 + y * 17) - 0.5) * 14; // subtle variance
+  const c = (r: number, g: number, b: number) =>
+    gb(,,);
 
-      // scatter walls
-      return v > 0.45 ? 1 : 0;
-    })
-  );
-
-  // carve a safe spawn clearing
-  const cx = Math.floor(WORLD_W / 2);
-  const cy = Math.floor(WORLD_H / 2);
-  for (let yy = cy - 6; yy <= cy + 6; yy++) {
-    for (let xx = cx - 8; xx <= cx + 8; xx++) {
-      if (yy > 1 && xx > 1 && yy < WORLD_H - 2 && xx < WORLD_W - 2) grid[yy][xx] = 0;
-    }
+  switch (b) {
+    case "ash_dunes":
+      return c(14, 20, 18);
+    case "burnt_forest":
+      return c(10, 18, 10);
+    case "scorched_wilds":
+      return c(18, 12, 10);
+    case "icy_peaks":
+      return c(10, 14, 22);
   }
-
-  // carve simple paths
-  for (let x = 4; x < WORLD_W - 4; x++) grid[cy][x] = 0;
-  for (let y = 4; y < WORLD_H - 4; y++) grid[y][cx] = 0;
-
-  return grid;
 }
 
-function isWall(world: Tile[][], x: number, y: number) {
-  if (y < 0 || y >= world.length) return true;
-  if (x < 0 || x >= world[0].length) return true;
-  return world[y][x] === 1;
+function spritePath(s: Entity["sprite"]) {
+  switch (s) {
+    case "hero":
+      return "/assets/generated/vp_pixel_hero.png";
+    case "mage":
+      return "/assets/generated/vp_pixel_mage.png";
+    case "rogue":
+      return "/assets/generated/vp_pixel_rogue.png";
+    case "bot":
+      return "/assets/generated/vp_pixel_bot.png";
+  }
 }
 
 export default function TopDownMap() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const world = useMemo(() => genWorld(), []);
 
-  const [player, setPlayer] = useState<Vec2>(() => ({
-    x: Math.floor(WORLD_W / 2),
-    y: Math.floor(WORLD_H / 2),
-  }));
+  // World grid (bigger than viewport)
+  const worldW = 72;
+  const worldH = 40;
 
-  const [mobs, setMobs] = useState<Mob[]>(() => {
-    const base: Mob[] = [
-      { id: "npc-1", pos: { x: Math.floor(WORLD_W / 2) + 4, y: Math.floor(WORLD_H / 2) }, color: "#9AE6B4", name: "Ashkeeper", kind: "npc" },
-      { id: "npc-2", pos: { x: Math.floor(WORLD_W / 2) - 5, y: Math.floor(WORLD_H / 2) + 2 }, color: "#90CDF4", name: "Sparkwright", kind: "npc" },
-    ];
+  // Pixel-perfect tile size
+  const tile = 16;
+  const viewTilesW = 48; // 48*16 = 768px
+  const viewTilesH = 30; // 30*16 = 480px
 
-    // add critters near the clearing
-    for (let i = 0; i < 10; i++) {
-      base.push({
-        id: `critter-${i}`,
-        pos: { x: Math.floor(WORLD_W / 2) + (Math.random() * 18 - 9) | 0, y: Math.floor(WORLD_H / 2) + (Math.random() * 12 - 6) | 0 },
-        color: i % 2 === 0 ? "#FBB6CE" : "#FBD38D",
-        name: i % 2 === 0 ? "Emberling" : "Cinderfox",
-        kind: "critter",
-      });
-    }
-    // ensure none spawn in walls
-    return base.map(m => {
-      let { x, y } = m.pos;
-      x = clamp(x, 2, WORLD_W - 3);
-      y = clamp(y, 2, WORLD_H - 3);
-      if (isWall(world, x, y)) {
-        x = Math.floor(WORLD_W / 2);
-        y = Math.floor(WORLD_H / 2);
-      }
-      return { ...m, pos: { x, y } };
-    });
+  const [player, setPlayer] = useState<Entity>({
+    id: "p1",
+    x: 10,
+    y: 18,
+    kind: "player",
+    sprite: "hero",
+    name: "Ashbound",
   });
 
-  const [toast, setToast] = useState<string>("WASD / Arrows to move • E to interact");
-  const keysRef = useRef<Record<string, boolean>>({});
-  const lastMoveRef = useRef<number>(0);
+  const entities = useMemo<Entity[]>(() => {
+    const out: Entity[] = [];
+    // a few NPCs + mobs sprinkled across biomes
+    const presets: Array<Pick<Entity, "x" | "y" | "kind" | "sprite" | "name">> = [
+      { x: 14, y: 10, kind: "npc", sprite: "mage", name: "Cinder Seer" },
+      { x: 28, y: 14, kind: "npc", sprite: "rogue", name: "Dune Stalker" },
+      { x: 38, y: 22, kind: "mob", sprite: "bot", name: "Ash Husk" },
+      { x: 52, y: 16, kind: "mob", sprite: "bot", name: "Scorch Wretch" },
+      { x: 60, y: 10, kind: "mob", sprite: "bot", name: "Frostbound Wisp" },
+      { x: 44, y: 28, kind: "mob", sprite: "bot", name: "Burnt Revenant" },
+    ];
+    presets.forEach((p, i) =>
+      out.push({ id: e, ...p })
+    );
+    return out;
+  }, []);
 
-  // Input
+  const allEntities = useMemo(() => [player, ...entities], [player, entities]);
+
+  const [camera, setCamera] = useState({ x: 0, y: 0 });
+
+  // Load sprites once
+  const [spritesReady, setSpritesReady] = useState(false);
+  const spriteImgs = useRef<Record<string, HTMLImageElement>>({});
+
   useEffect(() => {
-    const down = (e: KeyboardEvent) => {
-      keysRef.current[e.key.toLowerCase()] = true;
-      if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(e.key.toLowerCase())) {
-        e.preventDefault();
-      }
-      if (e.key.toLowerCase() === "e") {
-        // interact
-        const near = mobs.find(m => Math.abs(m.pos.x - player.x) + Math.abs(m.pos.y - player.y) === 1);
-        if (near) setToast(`${near.name}: ${near.kind === "npc" ? "The Phoenix stirs. Keep gathering sparks." : "Squeak! (It scampers happily.)"}`);
-        else setToast("No one nearby.");
-      }
-    };
-    const up = (e: KeyboardEvent) => {
-      keysRef.current[e.key.toLowerCase()] = false;
-    };
-    window.addEventListener("keydown", down, { passive: false });
-    window.addEventListener("keyup", up);
+    let cancelled = false;
+
+    const paths = Array.from(
+      new Set(allEntities.map((e) => spritePath(e.sprite)))
+    );
+
+    let loaded = 0;
+    paths.forEach((p) => {
+      const img = new Image();
+      img.src = p;
+      img.onload = () => {
+        loaded++;
+        if (!cancelled && loaded === paths.length) setSpritesReady(true);
+      };
+      spriteImgs.current[p] = img;
+    });
+
     return () => {
-      window.removeEventListener("keydown", down as any);
-      window.removeEventListener("keyup", up as any);
+      cancelled = true;
     };
-  }, [mobs, player.x, player.y]);
-
-  // Sim tick: movement + critter wander
-  useEffect(() => {
-    const tick = () => {
-      const now = performance.now();
-
-      // player movement at fixed step rate
-      if (now - lastMoveRef.current > 110) {
-        const k = keysRef.current;
-        let dx = 0, dy = 0;
-
-        if (k["arrowup"] || k["w"]) dy -= 1;
-        else if (k["arrowdown"] || k["s"]) dy += 1;
-        else if (k["arrowleft"] || k["a"]) dx -= 1;
-        else if (k["arrowright"] || k["d"]) dx += 1;
-
-        if (dx !== 0 || dy !== 0) {
-          const nx = player.x + dx;
-          const ny = player.y + dy;
-          if (!isWall(world, nx, ny)) {
-            setPlayer({ x: nx, y: ny });
-            lastMoveRef.current = now;
-          }
-        }
-      }
-
-      // critters wander occasionally
-      if (Math.random() < 0.08) {
-        setMobs(prev =>
-          prev.map(m => {
-            if (m.kind !== "critter") return m;
-            if (Math.random() < 0.65) return m;
-            const dirs = [
-              { x: 1, y: 0 },
-              { x: -1, y: 0 },
-              { x: 0, y: 1 },
-              { x: 0, y: -1 },
-            ];
-            const d = dirs[(Math.random() * dirs.length) | 0];
-            const nx = m.pos.x + d.x;
-            const ny = m.pos.y + d.y;
-            if (isWall(world, nx, ny)) return m;
-            // avoid walking onto player
-            if (nx === player.x && ny === player.y) return m;
-            return { ...m, pos: { x: nx, y: ny } };
-          })
-        );
-      }
-
-      draw();
-      raf = requestAnimationFrame(tick);
-    };
-
-    let raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Camera follows player
+  useEffect(() => {
+    const camX = clamp(player.x - Math.floor(viewTilesW / 2), 0, worldW - viewTilesW);
+    const camY = clamp(player.y - Math.floor(viewTilesH / 2), 0, worldH - viewTilesH);
+    setCamera({ x: camX, y: camY });
   }, [player.x, player.y]);
 
-  function draw() {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+  // Controls
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const k = e.key.toLowerCase();
+      let dx = 0,
+        dy = 0;
+      if (k === "arrowup" || k === "w") dy = -1;
+      if (k === "arrowdown" || k === "s") dy = 1;
+      if (k === "arrowleft" || k === "a") dx = -1;
+      if (k === "arrowright" || k === "d") dx = 1;
+
+      if (dx || dy) {
+        e.preventDefault();
+        setPlayer((p) => ({
+          ...p,
+          x: clamp(p.x + dx, 0, worldW - 1),
+          y: clamp(p.y + dy, 0, worldH - 1),
+        }));
+      }
+      if (k === "e") {
+        // very small interaction check
+        const near = entities.find((en) => Math.abs(en.x - player.x) + Math.abs(en.y - player.y) <= 1);
+        if (near) alert(${near.name ?? "Something"} stares back through the ash...);
+      }
+    };
+
+    window.addEventListener("keydown", onKey, { passive: false });
+    return () => window.removeEventListener("keydown", onKey as any);
+  }, [entities, player.x, player.y]);
+
+  // Render loop
+  useEffect(() => {
+    const c = canvasRef.current;
+    if (!c) return;
+    const ctx = c.getContext("2d");
     if (!ctx) return;
 
-    const W = VIEW_W * TILE * SCALE;
-    const H = VIEW_H * TILE * SCALE;
+    c.width = viewTilesW * tile;
+    c.height = viewTilesH * tile;
 
-    if (canvas.width !== W) canvas.width = W;
-    if (canvas.height !== H) canvas.height = H;
+    ctx.imageSmoothingEnabled = false;
 
-    // crisp pixels
-    (ctx as any).imageSmoothingEnabled = false;
+    const draw = () => {
+      // tiles
+      for (let y = 0; y < viewTilesH; y++) {
+        for (let x = 0; x < viewTilesW; x++) {
+          const wx = camera.x + x;
+          const wy = camera.y + y;
+          const b = biomeAt(wx, wy);
+          ctx.fillStyle = tileColor(b, wx, wy);
+          ctx.fillRect(x * tile, y * tile, tile, tile);
 
-    // camera centered on player
-    const camX = clamp(player.x - Math.floor(VIEW_W / 2), 0, WORLD_W - VIEW_W);
-    const camY = clamp(player.y - Math.floor(VIEW_H / 2), 0, WORLD_H - VIEW_H);
-
-    // background
-    ctx.fillStyle = "#05060a";
-    ctx.fillRect(0, 0, W, H);
-
-    // draw tiles
-    for (let ty = 0; ty < VIEW_H; ty++) {
-      for (let tx = 0; tx < VIEW_W; tx++) {
-        const wx = camX + tx;
-        const wy = camY + ty;
-        const t = world[wy][wx];
-        const px = tx * TILE * SCALE;
-        const py = ty * TILE * SCALE;
-
-        // grass
-        if (t === 0) {
-          ctx.fillStyle = (wx + wy) % 2 === 0 ? "#0b1a12" : "#0a1710";
-          ctx.fillRect(px, py, TILE * SCALE, TILE * SCALE);
-
-          // tiny speckles
-          if ((wx * 17 + wy * 31) % 19 === 0) {
-            ctx.fillStyle = "#103321";
-            ctx.fillRect(px + 6 * SCALE, py + 10 * SCALE, 2 * SCALE, 2 * SCALE);
+          // tiny embers/snow specks
+          const n = seeded(wx * 77 + wy * 91);
+          if (b !== "icy_peaks" && n > 0.985) {
+            ctx.fillStyle = "rgba(255,120,60,0.18)";
+            ctx.fillRect(x * tile + 7, y * tile + 6, 2, 2);
           }
-        } else {
-          // wall/rock
-          ctx.fillStyle = "#10121a";
-          ctx.fillRect(px, py, TILE * SCALE, TILE * SCALE);
-          ctx.fillStyle = "#1b2130";
-          ctx.fillRect(px + 2 * SCALE, py + 2 * SCALE, (TILE - 4) * SCALE, (TILE - 4) * SCALE);
+          if (b === "icy_peaks" && n > 0.988) {
+            ctx.fillStyle = "rgba(180,220,255,0.20)";
+            ctx.fillRect(x * tile + 6, y * tile + 5, 2, 2);
+          }
         }
       }
-    }
 
-    // mobs
-    for (const m of mobs) {
-      const sx = (m.pos.x - camX) * TILE * SCALE;
-      const sy = (m.pos.y - camY) * TILE * SCALE;
-      if (sx < -TILE * SCALE || sy < -TILE * SCALE || sx > W || sy > H) continue;
+      // entities (sorted by y for fake depth)
+      const entsInView = allEntities
+        .filter((e) => e.x >= camera.x && e.x < camera.x + viewTilesW && e.y >= camera.y && e.y < camera.y + viewTilesH)
+        .slice()
+        .sort((a, b) => a.y - b.y);
 
-      // body
-      ctx.fillStyle = m.color;
-      ctx.fillRect(sx + 3 * SCALE, sy + 3 * SCALE, 10 * SCALE, 10 * SCALE);
+      entsInView.forEach((e) => {
+        const sx = (e.x - camera.x) * tile;
+        const sy = (e.y - camera.y) * tile;
 
-      // eyes
-      ctx.fillStyle = "#0b0b0b";
-      ctx.fillRect(sx + 5 * SCALE, sy + 6 * SCALE, 2 * SCALE, 2 * SCALE);
-      ctx.fillRect(sx + 9 * SCALE, sy + 6 * SCALE, 2 * SCALE, 2 * SCALE);
-    }
+        // soft ground shadow
+        ctx.fillStyle = "rgba(0,0,0,0.35)";
+        ctx.fillRect(sx + 3, sy + 12, 10, 3);
 
-    // player
-    const px = (player.x - camX) * TILE * SCALE;
-    const py = (player.y - camY) * TILE * SCALE;
+        const p = spritePath(e.sprite);
+        const img = spriteImgs.current[p];
 
-    // glow
-    ctx.fillStyle = "rgba(255, 120, 80, 0.25)";
-    ctx.fillRect(px - 1 * SCALE, py - 1 * SCALE, (TILE + 2) * SCALE, (TILE + 2) * SCALE);
+        if (spritesReady && img?.complete) {
+          // center sprite slightly above tile for “feet”
+          ctx.drawImage(img, sx, sy - 8, tile, tile);
+        } else {
+          // fallback block
+          ctx.fillStyle = "rgba(200,200,200,0.6)";
+          ctx.fillRect(sx + 4, sy + 4, 8, 8);
+        }
 
-    ctx.fillStyle = "#ff7a5a";
-    ctx.fillRect(px + 3 * SCALE, py + 3 * SCALE, 10 * SCALE, 10 * SCALE);
+        // player marker
+        if (e.kind === "player") {
+          ctx.strokeStyle = "rgba(255,180,90,0.85)";
+          ctx.strokeRect(sx + 1, sy + 1, tile - 2, tile - 2);
+        }
+      });
 
-    // “crest”
-    ctx.fillStyle = "#ffd7a1";
-    ctx.fillRect(px + 7 * SCALE, py + 2 * SCALE, 2 * SCALE, 2 * SCALE);
+      requestAnimationFrame(draw);
+    };
 
-    // HUD border
-    ctx.strokeStyle = "rgba(255,255,255,0.08)";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(1, 1, W - 2, H - 2);
-  }
+    draw();
+  }, [camera.x, camera.y, spritesReady, allEntities]);
 
   return (
-    <div className="rounded-3xl border border-zinc-800 bg-zinc-950/40 p-4">
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <div className="text-lg font-semibold">Explore</div>
-          <div className="text-sm text-zinc-400">Top-down overworld (pixel-perfect). Interact with creatures and NPCs.</div>
-        </div>
-        <div className="text-sm text-zinc-400">{toast}</div>
+    <div className="mt-3">
+      <div className="text-sm text-zinc-300 mb-2">
+        <div className="font-semibold">Explore</div>
+        <div>Top-down overworld (pixel-perfect). Interact with creatures and NPCs.</div>
+        <div className="opacity-80">WASD / Arrows to move • E to interact</div>
       </div>
 
-      <div className="mt-3 overflow-hidden rounded-2xl border border-zinc-800 bg-black">
-        <canvas ref={canvasRef} style={{ display: "block", width: VIEW_W * TILE * SCALE, height: VIEW_H * TILE * SCALE, imageRendering: "pixelated" as any }} />
+      <div className="inline-block border border-zinc-800 bg-black/30">
+        <canvas ref={canvasRef} />
       </div>
 
-      <div className="mt-3 grid gap-2 text-xs text-zinc-400 sm:grid-cols-3">
-        <div className="rounded-xl border border-zinc-800 bg-zinc-950/40 p-3">Move: <span className="text-zinc-200">WASD / Arrows</span></div>
-        <div className="rounded-xl border border-zinc-800 bg-zinc-950/40 p-3">Interact: <span className="text-zinc-200">E</span> (stand adjacent)</div>
-        <div className="rounded-xl border border-zinc-800 bg-zinc-950/40 p-3">World: <span className="text-zinc-200">{WORLD_W}×{WORLD_H}</span> tiles</div>
+      <div className="mt-2 text-xs text-zinc-400">
+        Biomes: Ash Dunes • Burnt Forest • Scorched Wilds • Icy Peaks
       </div>
     </div>
   );
