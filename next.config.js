@@ -1,5 +1,7 @@
-﻿/** @type {import('next').NextConfig} */
+﻿/** @type {import("next").NextConfig} */
 const nextConfig = {
-  turbopack: { root: __dirname },
+  experimental: {
+    turbo: false,
+  },
 };
 module.exports = nextConfig;
