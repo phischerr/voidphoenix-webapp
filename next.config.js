@@ -1,7 +1,7 @@
-﻿/** @type {import("next").NextConfig} */
-const nextConfig = {
-  experimental: {
-    turbo: false,
+﻿const path = require("path");
+/** @type {import("next").NextConfig} */
+module.exports = {
+  turbopack: {
+    root: path.resolve(__dirname),
   },
 };
-module.exports = nextConfig;
